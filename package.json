@@ -1,0 +1,43 @@
+
+{
+    "name": "soundcloud-web-app",
+    "version": "1.0.0",
+    "description": "SoundCloud Desktop Application",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder",
+        "build-win": "electron-builder --win",
+        "build-mac": "electron-builder --mac",
+        "build-linux": "electron-builder --linux",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
+    },
+    "keywords": ["soundcloud", "music", "electron", "desktop", "web-app"],
+    "author": "TheBanditOfRed",
+    "license": "BSD 3-Clause",
+    "devDependencies": {
+        "electron": "^37.2.0",
+        "electron-builder": "^26.0.12"
+    },
+    "build": {
+        "appId": "com.TheBanditOfRed.soundcloud-desktop",
+        "productName": "SoundCloud Desktop",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "main.js",
+            "package.json"
+        ],
+        "win": {
+            "target": "nsis"
+        },
+        "mac": {
+            "target": "dmg"
+        },
+        "linux": {
+            "target": "AppImage"
+        }
+    }
+}
