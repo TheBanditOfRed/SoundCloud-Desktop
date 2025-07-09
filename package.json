@@ -1,43 +1,193 @@
-
 {
-    "name": "soundcloud-web-app",
-    "version": "1.0.0",
-    "description": "SoundCloud Desktop Application",
+    "name": "soundcloud-desktop",
+    "version": "1.1.0",
+    "description": "A simple desktop wrapper for SoundCloud with quality-of-life improvements",
     "main": "main.js",
     "scripts": {
         "start": "electron .",
+        "dev": "electron . --enable-logging",
         "build": "electron-builder",
         "build-win": "electron-builder --win",
         "build-mac": "electron-builder --mac",
         "build-linux": "electron-builder --linux",
         "pack": "electron-builder --dir",
-        "dist": "electron-builder"
+        "clean": "rimraf dist",
+        "postinstall": "electron-builder install-app-deps",
+        "rebuild": "electron-rebuild"
     },
-    "keywords": ["soundcloud", "music", "electron", "desktop", "web-app"],
-    "author": "TheBanditOfRed",
-    "license": "BSD 3-Clause",
+    "keywords": [
+        "soundcloud",
+        "music",
+        "electron",
+        "desktop",
+        "web-app",
+        "audio",
+        "streaming",
+        "player"
+    ],
+    "author": {
+        "name": "Oscar Barros-Nogueira",
+        "email": "presidentoscar@gmail.com"
+    },
+    "homepage": "https://github.com/TheBanditOfRed/Soundcloud-Desktop",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TheBanditOfRed/Soundcloud-Desktop.git"
+    },
+    "bugs": {
+        "url": "https://github.com/TheBanditOfRed/Soundcloud-Desktop/issues"
+    },
+    "license": "BSD-3-Clause",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
     "devDependencies": {
         "electron": "^37.2.0",
-        "electron-builder": "^26.0.12"
+        "electron-builder": "^26.0.12",
+        "electron-rebuild": "^3.2.9",
+        "rimraf": "^5.0.5"
     },
     "build": {
         "appId": "com.TheBanditOfRed.soundcloud-desktop",
         "productName": "SoundCloud Desktop",
+        "copyright": "Copyright © 2025 Oscar Barros-Nogueira",
+        "icon": "assets/icon",
         "directories": {
-            "output": "dist"
+            "output": "dist",
+            "buildResources": "assets"
         },
         "files": [
             "main.js",
-            "package.json"
+            "media-manager.js",
+            "package.json",
+            "assets/**/*",
+            "icons/**/*",
+            "!icons/SVG/**/*"
         ],
+        "compression": "maximum",
+        "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+        "publish": {
+            "provider": "github",
+            "owner": "TheBanditOfRed",
+            "repo": "SoundCloud-Desktop"
+        },
         "win": {
-            "target": "nsis"
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": ["x64", "ia32"]
+                },
+                {
+                    "target": "portable",
+                    "arch": "x64"
+                }
+            ],
+            "icon": "assets/icon.ico",
+            "verifyUpdateCodeSignature": false
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "SoundCloud Desktop",
+            "installerIcon": "assets/icon.ico",
+            "uninstallerIcon": "assets/icon.ico",
+            "installerHeaderIcon": "assets/icon.ico",
+            "deleteAppDataOnUninstall": true,
+            "runAfterFinish": true,
+            "displayLanguageSelector": true,
+            "installerLanguages": ["en_US"],
+            "language": "1033"
+        },
+        "portable": {
+            "artifactName": "${productName}-${version}-portable.${ext}"
         },
         "mac": {
-            "target": "dmg"
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": ["x64", "arm64"]
+                },
+                {
+                    "target": "zip",
+                    "arch": ["x64", "arm64"]
+                }
+            ],
+            "icon": "assets/icon.icns",
+            "category": "public.app-category.music",
+            "hardenedRuntime": true,
+            "gatekeeperAssess": false
+        },
+        "dmg": {
+            "title": "SoundCloud Desktop",
+            "icon": "assets/icon.icns",
+            "iconSize": 80,
+            "window": {
+                "width": 540,
+                "height": 380
+            },
+            "contents": [
+                {
+                    "x": 410,
+                    "y": 150,
+                    "type": "link",
+                    "path": "/Applications"
+                },
+                {
+                    "x": 130,
+                    "y": 150,
+                    "type": "file"
+                }
+            ]
         },
         "linux": {
-            "target": "AppImage"
+            "target": [
+                {
+                    "target": "AppImage",
+                    "arch": ["x64", "arm64"]
+                },
+                {
+                    "target": "deb",
+                    "arch": ["x64", "arm64"]
+                },
+                {
+                    "target": "rpm",
+                    "arch": ["x64", "arm64"]
+                },
+                {
+                    "target": "tar.gz",
+                    "arch": ["x64", "arm64"]
+                }
+            ],
+            "icon": "assets/icon.png",
+            "category": "AudioVideo",
+            "synopsis": "Simple desktop wrapper for SoundCloud",
+            "description": "A simple desktop wrapper for SoundCloud with quality-of-life improvements. Just SoundCloud in its own window with better popup handling and UI polish.",
+            "vendor": "Oscar Barros-Nogueira",
+            "maintainer": "Oscar Barros-Nogueira <presidentoscar@gmail.com>"
+        },
+        "appImage": {
+            "artifactName": "${productName}-${version}.${ext}"
+        },
+        "deb": {
+            "depends": [
+                "gconf2",
+                "gconf-service",
+                "libnotify4",
+                "libappindicator1",
+                "libxtst6",
+                "libnss3"
+            ]
+        },
+        "rpm": {
+            "depends": [
+                "libnotify",
+                "libappindicator",
+                "libxtst",
+                "nss"
+            ]
         }
     }
 }

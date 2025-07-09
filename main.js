@@ -1,16 +1,25 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, nativeImage, globalShortcut, systemPreferences, ipcMain } = require('electron');
 const { nativeTheme } = require('electron');
 const path = require('path');
+const MediaManager = require('./media-manager');
 
 let mainWindow;
 let popupWindow = null;
-let isPlaying = false;
+let mediaManager;
+let mediaState = {
+    isPlaying: false,
+    canGoNext: true,
+    canGoPrevious: true,
+    trackTitle: '',
+    trackArtist: ''
+};
 
 function createWindow() {
     // Create the browser window
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
+        icon: path.join(__dirname, 'assets/icon.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -19,10 +28,12 @@ function createWindow() {
             allowRunningInsecureContent: false,
             experimentalFeatures: false
         },
-
         title: 'SoundCloud Desktop',
         show: false // Don't show until ready
     });
+
+    // Initialize media manager
+    mediaManager = new MediaManager(mainWindow, mediaState);
 
     function updateScrollbarTheme() {
         const isDark = nativeTheme.shouldUseDarkColors;
@@ -46,21 +57,34 @@ function createWindow() {
     }
 
     updateScrollbarTheme();
-    nativeTheme.on('updated', updateScrollbarTheme);
-
 
     // Load SoundCloud
     mainWindow.loadURL('https://soundcloud.com').then(_ => {
         console.log('SoundCloud loaded successfully');
     });
 
-    // Show window when ready
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
 
-        if (process.platform === 'win32') {
-            setupThumbnailToolbar();
+        setTimeout(() => {
+            mediaManager.initialize();
+        }, 1000);
+    });
+
+    nativeTheme.on('updated', () => {
+        console.log('Native theme updated, refreshing styles');
+        updateScrollbarTheme();
+        if (mediaManager) {
+            mediaManager.updateControls();
         }
+    });
+
+    // Handle window closed
+    mainWindow.on('closed', () => {
+        if (mediaManager) {
+            mediaManager.cleanup();
+        }
+        mainWindow = null;
     });
 
     // Handle external links and popups
@@ -70,11 +94,7 @@ function createWindow() {
         console.log('Frame:', frameName);
         console.log('Disposition:', disposition);
 
-        // Handle different types of popup requests
         if (disposition === 'new-window' || disposition === 'popup') {
-
-            // If it's about:blank, it means the popup will be populated later
-            // We need to allow this and handle it
             if (url === 'about:blank' || url.includes('about:blank')) {
                 console.log('Creating popup window for dynamic content');
 
@@ -98,7 +118,6 @@ function createWindow() {
                 };
             }
 
-            // For login popups with actual URLs
             if (url.includes('soundcloud.com') ||
                 url.includes('google.com') ||
                 url.includes('accounts.google.com') ||
@@ -131,7 +150,6 @@ function createWindow() {
             }
         }
 
-        // For other external links, open in system browser
         console.log('Opening in system browser:', url);
         shell.openExternal(url).then(_ => {
             console.log('Attempting to open external URL in system browser:', url);
@@ -139,22 +157,15 @@ function createWindow() {
         return { action: 'deny' };
     });
 
-    // Handle window closed
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
-
     mainWindow.setMenu(null);
 }
 
-function setupThumbnailToolbar() {
-
-}
-
-// App event listeners
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
+    if (mediaManager) {
+        mediaManager.cleanup();
+    }
     if (process.platform !== 'darwin') {
         app.quit();
     }
@@ -166,6 +177,12 @@ app.on('activate', () => {
     }
 });
 
+app.on('will-quit', () => {
+    if (mediaManager) {
+        mediaManager.cleanup();
+    }
+});
+
 function checkURL(contents) {
     contents.on('will-navigate', (event, navigationUrl) => {
         console.log('Will navigate to:', navigationUrl);
@@ -173,7 +190,6 @@ function checkURL(contents) {
         try {
             const parsedUrl = new URL(navigationUrl);
 
-            // Allow navigation within SoundCloud and auth providers
             if (parsedUrl.origin === 'https://soundcloud.com' ||
                 parsedUrl.origin === 'https://secure.soundcloud.com' ||
                 parsedUrl.origin === 'https://accounts.google.com' ||
@@ -191,8 +207,6 @@ function checkURL(contents) {
                 return;
             }
 
-            // Block navigation to other external sites in main window only
-            // Allow popups to navigate freely for OAuth flows
             if (contents === mainWindow.webContents) {
                 console.log('Blocking navigation in main window to:', navigationUrl);
                 event.preventDefault();
@@ -204,7 +218,6 @@ function checkURL(contents) {
             }
         } catch (error) {
             console.log('Error parsing URL:', navigationUrl, error);
-            // If URL parsing fails, be permissive for popups
             if (contents !== mainWindow.webContents) {
                 console.log('Allowing popup navigation to unparseable URL');
             }
@@ -218,10 +231,7 @@ function checkLoading(contents) {
         console.log('=== PAGE LOADED ===');
         console.log('Current URL:', currentUrl);
 
-        // Check if this is a popup that completed OAuth
-        // Only close if we're on the callback URL or back to main soundcloud without auth params
         if (contents !== mainWindow.webContents) {
-            // Check for OAuth completion indicators
             if (currentUrl.includes('web-auth-callback') ||
                 currentUrl.includes('oauth/callback') ||
                 (currentUrl === 'https://soundcloud.com/' && !currentUrl.includes('oauth') && !currentUrl.includes('login') && !currentUrl.includes('auth'))) {
@@ -251,18 +261,9 @@ function windowCreated(contents) {
     });
 }
 
-//Handle popup windows and external links
 app.on('web-contents-created', (event, contents) => {
     console.log('=== NEW WEB CONTENTS CREATED ===');
-
-    // Handle navigation to external sites
     checkURL(contents);
-
-    // Monitor when pages finish loading
     checkLoading(contents);
-
-    // Handle popup window creation
     windowCreated(contents);
 });
-
-
