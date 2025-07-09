@@ -53,7 +53,7 @@ npm run build-mac
 npm run build-linux
 ```
 
-# Known Issues
+## Known Issues
 - Toolbar play/pause sometimes does not play/pause content
 
 ## That's it
