@@ -22,8 +22,6 @@ A simple desktop wrapper for SoundCloud with some quality-of-life improvements.
   - macOS system media controls
   - Global keyboard shortcuts (F7/F8/F9)
 
-More features are in development!
-
 ## Installation
 
 ### Prerequisites
