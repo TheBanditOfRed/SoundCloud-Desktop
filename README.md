@@ -27,7 +27,7 @@ More features are in development!
 
 ### Run from source
 ```bash
-git clone https://github.com/TheBanditOfRed/Soundcloud-Desktop.git
+git clone https://github.com/TheBanditOfRed/SoundCloud-Desktop.git
 cd soundcloud-desktop
 npm install
 npm start
