@@ -1,6 +1,6 @@
 {
     "name": "soundcloud-desktop",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "A simple desktop wrapper for SoundCloud with quality-of-life improvements",
     "main": "main.js",
     "scripts": {
