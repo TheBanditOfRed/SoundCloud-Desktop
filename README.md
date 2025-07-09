@@ -1,6 +1,5 @@
 > **⚠️ Work in Progress**: This project is currently under active development. Some features may be incomplete or subject to change.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)
 ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
@@ -13,6 +12,8 @@
 <img src="assets/icon.png" width="256" height="256">
 
 A simple desktop wrapper for SoundCloud with some quality-of-life improvements.
+
+[![Download Latest Release](https://img.shields.io/github/v/release/TheBanditOfRed/SoundCloud-Desktop?style=for-the-badge&logo=github)](https://github.com/TheBanditOfRed/SoundCloud-Desktop/releases/latest)
 
 ## Features
 
@@ -60,7 +61,6 @@ npm run build-linux
 >**Note**: Building from source for Windows is currently in a working state, though there are a few known issues with the current build (v1.1.0). The built application should function correctly for basic usage. Other platform builds have not been tested yet.
 
 ## Pre-built binaries
-[![Download Latest Release](https://img.shields.io/github/v/release/TheBanditOfRed/SoundCloud-Desktop?style=for-the-badge&logo=github)](https://github.com/TheBanditOfRed/SoundCloud-Desktop/releases/latest)
 
 ## That's it
 
