@@ -1,11 +1,11 @@
 > ## Legal Notice
 > This application is not affiliated with, endorsed by, or connected to SoundCloud in any way. SoundCloud is a trademark of SoundCloud Limited. This is an independent, unofficial desktop wrapper created by Oscar Barros-Nogueira. The SoundCloud icon and branding are property of SoundCloud Limited and used here for identification purposes only.
 
+# SoundCloud Desktop
 ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js)
 ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
-# SoundCloud Desktop
 <img src="assets/icon.png" width="256" height="256">
 
 A simple desktop wrapper for SoundCloud with some quality-of-life improvements.
