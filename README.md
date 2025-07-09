@@ -53,8 +53,6 @@ npm run build-mac
 npm run build-linux
 ```
 
-## Pre-built binaries
-
 ## That's it
 
 It's literally just a better SoundCloud experience on desktop. Nothing fancy.
