@@ -1,6 +1,7 @@
-const { app, BrowserWindow, shell, nativeImage, globalShortcut, systemPreferences, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, nativeImage} = require('electron');
 const { nativeTheme } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const MediaManager = require('./media-manager');
 
 let mainWindow;
@@ -14,23 +15,111 @@ let mediaState = {
     trackArtist: ''
 };
 
+function resizeIcon(iconPath, icon) {
+    // const sizes = [16, 24, 32, 48, 64, 128, 256];
+    const resizedIcon = icon.resize({ width: 48, height: 48 });
+
+    console.log('Using icon from:', iconPath);
+    console.log('Resized icon size:', resizedIcon.getSize());
+
+    return resizedIcon;
+}
+
+function createIcon() {
+    debugIcon();
+
+    const possiblePaths = [
+        path.join(__dirname, 'assets', 'icon.png'),
+        path.join(__dirname, 'assets/icon.png'),
+        path.join(__dirname, 'icon.png'),
+        path.join(process.cwd(), 'assets', 'icon.png')
+    ];
+
+    for (const iconPath of possiblePaths) {
+        if (fs.existsSync(iconPath)) {
+            console.log(`Trying to load icon from: ${iconPath}`);
+
+            try {
+                const icon = nativeImage.createFromPath(iconPath);
+                console.log('Icon loaded successfully');
+                console.log('Icon size:', icon.getSize());
+                console.log('Icon is empty:', icon.isEmpty());
+                console.log('Icon aspect ratio:', icon.getAspectRatio());
+
+                if (process.platform === 'linux' && !icon.isEmpty()) {
+                   return resizeIcon(iconPath, icon);
+                }
+
+            } catch (error) {
+                console.log('Error loading icon:', error);
+            }
+        }
+    }
+
+    console.log('No valid icon found');
+
+}
+
 function createWindow() {
+    const windowIcon = createIcon();
+
+    if (process.platform === 'linux' && windowIcon) {
+        app.setAppUserModelId('com.TheBanditOfRed.soundcloud-desktop');
+
+        if (windowIcon && !windowIcon.isEmpty()) {
+            const tempIconPath = path.join(require('os').tmpdir(), 'soundcloud-desktop-icon.png');
+            try {
+                fs.writeFileSync(tempIconPath, windowIcon.toPNG());
+                console.log('Temporary icon saved to:', tempIconPath);
+            } catch (error) {
+                console.log('Could not save temporary icon:', error);
+            }
+        }
+    }
+
     // Create the browser window
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        icon: path.join(__dirname, 'assets/icon.png'),
+        icon: windowIcon,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
             webSecurity: true,
             allowRunningInsecureContent: false,
-            experimentalFeatures: false
+            experimentalFeatures: false,
+            hardwareAcceleration: false,
+            offscreen: false
         },
         title: 'SoundCloud Desktop',
-        show: false // Don't show until ready
+        show: false,
+        ...(process.platform === 'linux' && {
+            skipTaskbar: false,
+            autoHideMenuBar: true,
+            useContentSize: true
+        })
     });
+
+    if (process.platform === 'linux' && windowIcon) {
+        try {
+            mainWindow.setIcon(windowIcon);
+            console.log('Icon set via setIcon() method');
+
+            setTimeout(() => {
+                mainWindow.setIcon(windowIcon);
+                console.log('Icon re-set after timeout');
+            }, 1000);
+
+        } catch (error) {
+            console.log('Error setting icon:', error);
+        }
+    }
+
+    if (windowIcon) {
+        mainWindow.setIcon(windowIcon);
+        console.log('Icon set via setIcon() method');
+    }
 
     // Initialize media manager
     mediaManager = new MediaManager(mainWindow, mediaState);
@@ -51,6 +140,11 @@ function createWindow() {
             ::-webkit-scrollbar-thumb:hover {
                 background: ${isDark ? '#777' : '#a8a8a8'};
             }
+            
+            /* Force system fonts for better Linux compatibility */
+            * {
+                font-family: -webkit-system-font, system-ui, sans-serif !important;
+            }
         `).then(_ => {
             console.log('Scrollbar theme updated successfully');
         });
@@ -65,6 +159,10 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+
+        // Force title update for Linux
+        mainWindow.setTitle('SoundCloud Desktop');
+        console.log('Window title set to: SoundCloud Desktop');
 
         setTimeout(() => {
             mediaManager.initialize();
@@ -160,6 +258,71 @@ function createWindow() {
     mainWindow.setMenu(null);
 }
 
+function setupLinuxIconSupport() {
+    if (process.platform === 'linux') {
+        app.setAppUserModelId('com.TheBanditOfRed.soundcloud-desktop');
+    }
+}
+
+app.whenReady().then(() => {
+    setupLinuxIconSupport();
+    createWindow();
+});
+
+
+function debugIcon() {
+    console.log('=== ICON DEBUG INFO ===');
+    console.log('Platform:', process.platform);
+    console.log('Current working directory:', process.cwd());
+    console.log('__dirname:', __dirname);
+
+    if (process.platform === 'linux') {
+        console.log('Desktop environment:', process.env.DESKTOP_SESSION);
+        console.log('Display server:', process.env.WAYLAND_DISPLAY ? 'Wayland' : 'X11');
+        console.log('Icon theme:', process.env.ICON_THEME);
+    }
+
+    const possiblePaths = [
+        path.join(__dirname, 'assets', 'icon.png'),
+        path.join(__dirname, 'assets/icon.png'),
+        path.join(__dirname, 'icon.png'),
+        path.join(process.cwd(), 'assets', 'icon.png'),
+        path.join(process.cwd(), 'assets/icon.png'),
+        path.join(process.cwd(), 'icon.png')
+    ];
+
+    possiblePaths.forEach((iconPath, index) => {
+        console.log(`Path ${index + 1}: ${iconPath}`);
+        console.log(`  Exists: ${fs.existsSync(iconPath)}`);
+        if (fs.existsSync(iconPath)) {
+            const stats = fs.statSync(iconPath);
+            console.log(`  Size: ${stats.size} bytes`);
+            console.log(`  Modified: ${stats.mtime}`);
+
+            if (process.platform === 'linux') {
+                try {
+                    const icon = nativeImage.createFromPath(iconPath);
+                    console.log(`  Valid icon: ${!icon.isEmpty()}`);
+                    console.log(`  Icon dimensions: ${icon.getSize().width}x${icon.getSize().height}`);
+                } catch (error) {
+                    console.log(`  Icon load error: ${error.message}`);
+                }
+            }
+        }
+    });
+
+    const assetsDir = path.join(__dirname, 'assets');
+    if (fs.existsSync(assetsDir)) {
+        console.log('Assets directory contents:');
+        fs.readdirSync(assetsDir).forEach(file => {
+            const filePath = path.join(assetsDir, file);
+            const stats = fs.statSync(filePath);
+            console.log(`  ${file} (${stats.size} bytes)`);
+        });
+    } else {
+        console.log('Assets directory not found at:', assetsDir);
+    }
+}
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

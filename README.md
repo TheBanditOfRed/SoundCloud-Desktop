@@ -55,6 +55,7 @@ npm run build-linux
 
 ## Known Issues
 - Toolbar play/pause sometimes does not play/pause content
+- Linux icon and window title are not rendering correctly
 
 ## That's it
 
